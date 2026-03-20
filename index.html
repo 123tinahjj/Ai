@@ -28,6 +28,8 @@
             --font-family: 'Cairo', 'Poppins', sans-serif;
             --message-user-bg: linear-gradient(145deg, #FFD700, #FFA500);
             --message-bot-bg: #2a2a2a;
+            --search-bg: #1e3a5f;
+            --search-accent: #4a90e2;
         }
 
         html[lang="en"] {
@@ -832,6 +834,45 @@
             color: #000;
         }
 
+        .search-indicator {
+            display: inline-block;
+            margin-right: 5px;
+            animation: searchPulse 1.5s infinite;
+        }
+
+        @keyframes searchPulse {
+            0% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+            100% { opacity: 0.5; transform: scale(1); }
+        }
+
+        .google-result {
+            background: var(--search-bg);
+            border-right: 4px solid var(--search-accent);
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .google-source {
+            color: var(--search-accent);
+            font-size: 12px;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .google-source a {
+            color: var(--search-accent);
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        .google-source a:hover {
+            text-decoration: underline;
+        }
+
         .input-premium-area {
             display: flex;
             gap: 10px;
@@ -1226,7 +1267,8 @@
             <div class="chat-premium" id="chatArea">
                 <div class="message bot-message">
                     <div class="message-bubble">
-                        👋 مرحباً! أنا Cerebonix - صفحتك البيضاء
+                        👋 مرحباً! أنا Cerebonix - صفحتك البيضاء<br>
+                        <small>🔍 يمكنني البحث في Google إذا لم أجد المعلومة</small>
                     </div>
                 </div>
             </div>
@@ -1275,7 +1317,7 @@
         <!-- الإحصائيات -->
         <div class="stats-premium" id="stats">
             <span>📚 تعلمت <span id="knowledgeCount">0</span> معلومة</span>
-            <span>❤️ Cerebonix - ذاكرة سحابية</span>
+            <span>❤️ Cerebonix - ذاكرة سحابية + بحث Google</span>
         </div>
     </div>
 
@@ -1381,6 +1423,75 @@
             }
         }
 
+        // ========== البحث في Google ==========
+        async function searchGoogle(query) {
+            try {
+                // إظهار مؤشر البحث
+                addMessage(`🔍 جاري البحث في Google عن: "${query}"`, 'bot');
+                
+                // استخدام واجهة برمجة تطبيقات Google Custom Search
+                // ملاحظة: ستحتاج إلى الحصول على مفتاح API ومعرف محرك البحث من Google
+                // هذا مثال توضيحي - يجب استبدال YOUR_API_KEY و YOUR_SEARCH_ENGINE_ID
+                const apiKey = 'YOUR_API_KEY'; // سجل في https://developers.google.com/custom-search/v1/introduction
+                const searchEngineId = 'YOUR_SEARCH_ENGINE_ID'; // أنشئ محرك بحث في https://programmablesearchengine.google.com/
+                
+                // للاختبار فقط - يمكنك استخدام هذا الـ API المؤقت
+                // هذا API تجريبي يعمل لعدد محدود من المرات
+                const proxyUrl = 'https://api.allorigins.win/get?url=';
+                const googleUrl = `https://www.googleapis.com/customsearch/v1?key=${apiKey}&cx=${searchEngineId}&q=${encodeURIComponent(query)}&lr=lang_ar&num=3`;
+                
+                // إذا لم يكن لديك API key، استخدم هذا الحل البديل (للعرض فقط)
+                // هذا يستخدم بحث Google العادي ولكن قد لا يعمل دائماً بسبب CORS
+                const fallbackUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+                
+                // محاولة استخدام Google Custom Search API إذا كان المفتاح موجوداً
+                if (apiKey !== 'YOUR_API_KEY' && searchEngineId !== 'YOUR_SEARCH_ENGINE_ID') {
+                    const response = await fetch(proxyUrl + encodeURIComponent(googleUrl));
+                    const data = await response.json();
+                    const searchResults = JSON.parse(data.contents);
+                    
+                    if (searchResults.items && searchResults.items.length > 0) {
+                        let resultText = `📝 نتائج البحث عن "${query}":\n\n`;
+                        const sources = [];
+                        
+                        searchResults.items.forEach((item, index) => {
+                            resultText += `${index + 1}. ${item.title}\n`;
+                            resultText += `${item.snippet}\n\n`;
+                            sources.push(item.link);
+                        });
+                        
+                        resultText += `🔗 المصادر:\n`;
+                        sources.forEach((source, index) => {
+                            resultText += `${index + 1}. ${source}\n`;
+                        });
+                        
+                        return {
+                            text: resultText,
+                            sources: sources
+                        };
+                    }
+                }
+                
+                // حل بديل: فتح نافذة بحث Google مباشرة
+                // هذا سيفتح Google في نافذة جديدة
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                
+                return {
+                    text: `🌐 فتحت لك بحث Google عن "${query}" في نافذة جديدة.\nيمكنك قراءة النتائج هناك ثم تعليمي الإجابة إذا أردت.`,
+                    sources: [`https://www.google.com/search?q=${encodeURIComponent(query)}`]
+                };
+                
+            } catch (error) {
+                console.error('خطأ في البحث:', error);
+                // في حالة الخطأ، نفتح Google مباشرة
+                window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+                return {
+                    text: `🌐 حدث خطأ في البحث، لكني فتحت لك Google مباشرة.\nابحث عن "${query}" بنفسك ثم علمني الإجابة.`,
+                    sources: [`https://www.google.com/search?q=${encodeURIComponent(query)}`]
+                };
+            }
+        }
+
         // ========== تسجيل الدخول ==========
         function login(isAutoLogin = false) {
             const email = document.getElementById('userEmail').value.trim();
@@ -1436,7 +1547,7 @@
                 document.getElementById('mainScreen').classList.remove('hidden');
 
                 if (!isAutoLogin) {
-                    setTimeout(() => addMessage(`أهلاً بك يا ${currentUser.name}، أنا Cerebonix، جاهز لأحفظ كل شيء`, 'bot'), 500);
+                    setTimeout(() => addMessage(`أهلاً بك يا ${currentUser.name}، أنا Cerebonix، جاهز لأحفظ كل شيء وأبحث في Google إذا لزم الأمر`, 'bot'), 500);
                 } else {
                     setTimeout(() => addMessage(`مرحباً بعودتك يا ${currentUser.name} 👋`, 'bot'), 500);
                 }
@@ -1462,14 +1573,39 @@
             }
         }
 
-        function addMessage(text, sender) {
+        function addMessage(text, sender, sources = null) {
             const chatArea = document.getElementById('chatArea');
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${sender}-message`;
             
             const bubble = document.createElement('div');
             bubble.className = 'message-bubble';
-            bubble.textContent = text;
+            
+            // تقسيم النص إذا كان يحتوي على نتائج بحث
+            if (sources && sources.length > 0) {
+                const lines = text.split('\n');
+                lines.forEach(line => {
+                    if (line.startsWith('🔗') || line.match(/^\d+\. https?:\/\//)) {
+                        // هذا سطر مصدر - نحوله إلى رابط
+                        const linkDiv = document.createElement('div');
+                        linkDiv.className = 'google-source';
+                        const match = line.match(/(https?:\/\/[^\s]+)/);
+                        if (match) {
+                            const url = match[0];
+                            linkDiv.innerHTML = `🔗 <a href="${url}" target="_blank">${url.substring(0, 50)}${url.length > 50 ? '...' : ''}</a>`;
+                        } else {
+                            linkDiv.textContent = line;
+                        }
+                        bubble.appendChild(linkDiv);
+                    } else {
+                        const textDiv = document.createElement('div');
+                        textDiv.textContent = line;
+                        bubble.appendChild(textDiv);
+                    }
+                });
+            } else {
+                bubble.textContent = text;
+            }
             
             const time = document.createElement('div');
             time.className = 'message-time';
@@ -1504,7 +1640,7 @@
             return null;
         }
 
-        function sendMessage() {
+        async function sendMessage() {
             const input = document.getElementById('userMessage');
             const msg = input.value.trim();
             if (!msg) return;
@@ -1562,11 +1698,27 @@
                 response = checkAllKnowledge(msg);
             }
             
+            // 6. إذا لم يجد إجابة، ابحث في Google
             if (!response) {
-                response = `لم أتعلم هذا بعد يا ${currentUser ? currentUser.name : ''}`;
+                // نعرض رسالة أننا سنبحث
+                addMessage(`🔍 لم أجد "${msg}" في ذاكرتي. سأبحث في Google عنك...`, 'bot');
+                
+                try {
+                    const searchResult = await searchGoogle(msg);
+                    addMessage(searchResult.text, 'bot', searchResult.sources);
+                    
+                    // نسأل المستخدم إذا كان يريد تعليمي هذه المعلومة
+                    setTimeout(() => {
+                        addMessage(`📝 هل تريدني أن أحفظ هذه المعلومة؟ اكتب "علمني: السؤال | الجواب"`, 'bot');
+                    }, 1000);
+                    
+                } catch (error) {
+                    addMessage(`عذراً، حدث خطأ في البحث. لكن يمكنك تعليمي الإجابة بنفسك.`, 'bot');
+                }
+            } else {
+                setTimeout(() => addMessage(response, 'bot'), 500);
             }
             
-            setTimeout(() => addMessage(response, 'bot'), 500);
             input.value = '';
         }
 
@@ -1938,7 +2090,7 @@
                     menuItems[5].children[1].textContent = 'Logout';
                 }
                 
-                document.querySelector('.stats-premium span:last-child').innerHTML = '❤️ Cerebonix - Cloud Memory';
+                document.querySelector('.stats-premium span:last-child').innerHTML = '❤️ Cerebonix - Cloud Memory + Google Search';
                 
                 document.querySelector('#teachPanel h3').textContent = '📚 Teach Cerebonix';
                 document.querySelector('#teachPanel .static-btn').innerHTML = '🔒 Static';
@@ -1974,7 +2126,7 @@
                     menuItems[5].children[1].textContent = 'تسجيل الخروج';
                 }
                 
-                document.querySelector('.stats-premium span:last-child').innerHTML = '❤️ Cerebonix - ذاكرة سحابية';
+                document.querySelector('.stats-premium span:last-child').innerHTML = '❤️ Cerebonix - ذاكرة سحابية + بحث Google';
                 
                 document.querySelector('#teachPanel h3').textContent = '📚 تعليم Cerebonix';
                 document.querySelector('#teachPanel .static-btn').innerHTML = '🔒 ثابتة';
