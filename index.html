@@ -229,6 +229,7 @@
             70% { transform: scale(1); }
         }
 
+        /* ===== تحسين رفع الصورة للهاتف ===== */
         .photo-upload {
             text-align: center;
             margin-bottom: clamp(20px, 3vw, 25px);
@@ -248,12 +249,18 @@
             transition: all 0.4s cubic-bezier(0.2, 0.9, 0.3, 1);
             border: 3px solid rgba(255, 215, 0, 0.5);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
         .photo-preview:hover {
             transform: scale(1.05);
             border-color: var(--accent-gold);
             box-shadow: 0 20px 40px rgba(255, 215, 0, 0.2);
+        }
+
+        .photo-preview:active {
+            transform: scale(0.98);
         }
 
         .photo-preview img {
@@ -443,7 +450,7 @@
             transform: rotate(90deg);
         }
 
-        /* ===== SIDE MENU (always visible on desktop, toggle on mobile) ===== */
+        /* ===== SIDE MENU ===== */
         .side-menu {
             position: absolute;
             top: 90px;
@@ -599,6 +606,19 @@
         .teach-btn.query-btn {
             background: linear-gradient(145deg, #aa66ff, #5500aa);
             color: white;
+        }
+
+        /* ===== زر تراكم المعلومات الجديد ===== */
+        .teach-btn.accumulate-btn {
+            background: linear-gradient(145deg, #ff6b6b, #ff4757);
+            color: white;
+            border: 1px solid #ff0000;
+        }
+
+        .teach-btn.accumulate-btn:hover {
+            background: linear-gradient(145deg, #ff4757, #ff0000);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(255, 0, 0, 0.3);
         }
 
         .teach-btn:hover {
@@ -913,7 +933,7 @@
             padding: 5px 10px;
         }
 
-        /* ===== LOGOUT MODAL (fixed with 1234) ===== */
+        /* ===== LOGOUT MODAL ===== */
         .password-modal {
             position: fixed;
             top: 0;
@@ -993,7 +1013,6 @@
         }
 
         /* ===== RESPONSIVE DESIGN ===== */
-        /* Mobile (max-width: 768px) */
         @media (max-width: 768px) {
             .main-premium {
                 height: 95vh;
@@ -1004,7 +1023,6 @@
                 max-width: 90%;
             }
 
-            /* Smaller buttons in teaching panel for mobile */
             .teach-btn {
                 min-width: 100px;
                 padding: 12px 8px;
@@ -1021,10 +1039,9 @@
             }
         }
 
-        /* Desktop (min-width: 1024px) - side menu always visible, more spacious */
         @media (min-width: 1024px) {
             .side-menu {
-                display: block !important; /* always visible */
+                display: block !important;
                 position: static;
                 max-width: 300px;
                 margin: 20px;
@@ -1034,7 +1051,6 @@
                 border: 1px solid var(--accent-gold);
             }
 
-            /* adjust main screen layout to accommodate side menu */
             .main-premium {
                 flex-direction: row;
                 align-items: stretch;
@@ -1050,8 +1066,8 @@
             }
 
             #contentArea {
-                margin-right: 340px; /* space for side menu */
-                margin-top: 80px; /* space for header */
+                margin-right: 340px;
+                margin-top: 80px;
                 height: calc(100% - 80px);
                 flex: 1;
             }
@@ -1071,7 +1087,7 @@
             }
 
             .menu-btn {
-                display: none; /* hide hamburger on desktop */
+                display: none;
             }
 
             .teaching-panel, .reminders-panel {
@@ -1093,7 +1109,6 @@
             }
         }
 
-        /* Adjust for smaller desktop */
         @media (min-width: 768px) and (max-width: 1023px) {
             .side-menu {
                 max-width: 320px;
@@ -1125,10 +1140,11 @@
         </div>
 
         <div class="photo-upload">
-            <div class="photo-preview" id="photoPreview" onclick="document.getElementById('profileImage').click()">
+            <!-- تحسين رفع الصورة للهاتف والحاسوب -->
+            <label for="profileImage" class="photo-preview" id="photoPreview">
                 <img id="profileImg" src="" style="display: none;">
                 <span id="photoText">أضف صورتك</span>
-            </div>
+            </label>
             <input type="file" id="profileImage" accept="image/*" style="display: none;" onchange="previewPhoto(this)">
         </div>
 
@@ -1228,9 +1244,11 @@
                     </div>
                     <div class="teach-buttons">
                         <button class="teach-btn query-btn" onclick="queryDaily()">📊 استعلام يوميات</button>
+                        <button class="teach-btn accumulate-btn" onclick="teachAccumulate()">📈 تراكم معلومات</button>
                     </div>
                     <div class="memory-limit">
-                        📅 يومية: تسجل حضور/غياب مع التاريخ
+                        📅 يومية: تسجل حضور/غياب مع التاريخ<br>
+                        📈 تراكم: نعم (تاريخ1) - لا (تاريخ2)
                     </div>
                 </div>
             </div>
@@ -1261,7 +1279,7 @@
         </div>
     </div>
 
-    <!-- نافذة تأكيد تسجيل الخروج (كلمة السر ثابتة 1234) -->
+    <!-- نافذة تأكيد تسجيل الخروج -->
     <div class="password-modal hidden" id="passwordModal">
         <div class="modal-content">
             <h3>🔐 تأكيد تسجيل الخروج</h3>
@@ -1287,7 +1305,8 @@
         // ثلاثة أنواع من المعرفة
         let staticKnowledge = {};      // ثابتة (لا تتغير)
         let updateableKnowledge = {};  // قابلة للتحديث (آخر إجابة)
-        let dailyKnowledge = {};        // يومية: { "key_date": "حضر/لم يحضر/..." } مثلاً "ابراهيم_2026-03-20": "حضر"
+        let dailyKnowledge = {};        // يومية: { "key_date": "حضر/لم يحضر/..." }
+        let accumulatedKnowledge = {};   // تراكم معلومات: { "key": [ {date: "2026-03-20", value: "نعم"}, ... ] }
 
         let currentUser = null;
         let reminders = [];
@@ -1329,6 +1348,7 @@
                         staticKnowledge = currentUser.staticKnowledge || {};
                         updateableKnowledge = currentUser.updateableKnowledge || {};
                         dailyKnowledge = currentUser.dailyKnowledge || {};
+                        accumulatedKnowledge = currentUser.accumulatedKnowledge || {};
                         reminders = currentUser.reminders || [];
                         setTimeout(() => login(true), 500);
                     }
@@ -1387,6 +1407,7 @@
                 staticKnowledge = currentUser.staticKnowledge || {};
                 updateableKnowledge = currentUser.updateableKnowledge || {};
                 dailyKnowledge = currentUser.dailyKnowledge || {};
+                accumulatedKnowledge = currentUser.accumulatedKnowledge || {};
                 reminders = currentUser.reminders || [];
             } else if (!isAutoLogin) {
                 currentUser = {
@@ -1397,11 +1418,13 @@
                     staticKnowledge: {},
                     updateableKnowledge: {},
                     dailyKnowledge: {},
+                    accumulatedKnowledge: {},
                     reminders: []
                 };
                 staticKnowledge = {};
                 updateableKnowledge = {};
                 dailyKnowledge = {};
+                accumulatedKnowledge = {};
                 reminders = [];
             }
 
@@ -1524,9 +1547,19 @@
                 }
             }
             
-            // 4. إذا كان السؤال عن استعلام يومي
-            if (msg.includes("كل الأيام") || (msg.includes("حضور") && msg.includes("ابراهيم"))) {
-                response = generateDailyReport(msg);
+            // 4. ابحث في المعلومات المتراكمة
+            if (!response) {
+                for (let key in accumulatedKnowledge) {
+                    if (msg.includes(key)) {
+                        response = generateAccumulatedReport(key);
+                        break;
+                    }
+                }
+            }
+            
+            // 5. إذا كان السؤال عن استعلام يومي
+            if (!response && (msg.includes("كل الأيام") || msg.includes("سجل"))) {
+                response = checkAllKnowledge(msg);
             }
             
             if (!response) {
@@ -1535,6 +1568,98 @@
             
             setTimeout(() => addMessage(response, 'bot'), 500);
             input.value = '';
+        }
+
+        // ========== تراكم المعلومات ==========
+        function teachAccumulate() {
+            const key = document.getElementById('teachQ').value.trim();
+            const value = document.getElementById('teachA').value.trim().toLowerCase();
+            
+            if (!key || !value) {
+                alert('الرجاء إدخال الاسم والحالة (نعم/لا)');
+                return;
+            }
+            
+            if (value !== 'نعم' && value !== 'لا') {
+                alert('الرجاء إدخال "نعم" أو "لا" فقط');
+                return;
+            }
+            
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
+            
+            if (!accumulatedKnowledge[key]) {
+                accumulatedKnowledge[key] = [];
+            }
+            
+            // التحقق من عدم تكرار نفس التاريخ
+            const existing = accumulatedKnowledge[key].find(item => item.date === dateStr);
+            if (existing) {
+                if (confirm(`يوجد تسجيل لـ "${key}" في تاريخ ${dateStr} بقيمة "${existing.value}". هل تريد تحديثه؟`)) {
+                    existing.value = value;
+                } else {
+                    return;
+                }
+            } else {
+                accumulatedKnowledge[key].push({
+                    date: dateStr,
+                    value: value
+                });
+            }
+            
+            // ترتيب حسب التاريخ
+            accumulatedKnowledge[key].sort((a, b) => a.date.localeCompare(b.date));
+            
+            const report = generateAccumulatedReport(key);
+            addMessage(`📈 تم تسجيل "${key}" في ${dateStr}: ${value}\n\n${report}`, 'bot');
+            
+            document.getElementById('teachQ').value = '';
+            document.getElementById('teachA').value = '';
+            saveData();
+            updateStats();
+            switchMenuTab('chat');
+        }
+
+        function generateAccumulatedReport(key) {
+            if (!accumulatedKnowledge[key] || accumulatedKnowledge[key].length === 0) {
+                return `لا توجد معلومات متراكمة لـ "${key}".`;
+            }
+            
+            let report = `📊 سجل "${key}":\n`;
+            let yesCount = 0;
+            let noCount = 0;
+            
+            accumulatedKnowledge[key].forEach(item => {
+                const d = new Date(item.date + 'T12:00:00');
+                const dateStr = d.toLocaleDateString('ar-SA', { weekday: 'long', year: 'numeric', month: 'numeric', day: 'numeric' });
+                report += `- ${dateStr}: ${item.value}\n`;
+                
+                if (item.value === 'نعم') yesCount++;
+                else if (item.value === 'لا') noCount++;
+            });
+            
+            report += `\n📈 الإحصائيات:\n`;
+            report += `✅ نعم: ${yesCount} مرة\n`;
+            report += `❌ لا: ${noCount} مرة\n`;
+            
+            if (yesCount + noCount > 0) {
+                const percentage = Math.round((yesCount / (yesCount + noCount)) * 100);
+                report += `📊 نسبة النعم: ${percentage}%`;
+            }
+            
+            return report;
+        }
+
+        function checkAllKnowledge(msg) {
+            for (let key in accumulatedKnowledge) {
+                if (msg.includes(key)) {
+                    return generateAccumulatedReport(key);
+                }
+            }
+            return null;
         }
 
         // ========== التعليم بأنواعه ==========
@@ -1607,18 +1732,6 @@
             document.getElementById('teachQ').value = '';
             document.getElementById('teachA').value = '';
             switchMenuTab('chat');
-        }
-
-        function generateDailyReport(queryMsg) {
-            let person = "ابراهيم";
-            if (queryMsg.includes("ابراهيم")) person = "ابراهيم";
-            else if (queryMsg.includes("محمد")) person = "محمد";
-            else if (queryMsg.includes("أحمد")) person = "أحمد";
-            else {
-                const match = queryMsg.match(/لـ\s*([^\s]+)/);
-                if (match) person = match[1];
-            }
-            return generateDailyReportForPerson(person);
         }
 
         function generateDailyReportForPerson(person) {
@@ -1720,19 +1833,23 @@
                 currentUser.staticKnowledge = staticKnowledge;
                 currentUser.updateableKnowledge = updateableKnowledge;
                 currentUser.dailyKnowledge = dailyKnowledge;
+                currentUser.accumulatedKnowledge = accumulatedKnowledge;
                 currentUser.reminders = reminders;
                 localStorage.setItem('user_' + currentUser.email, JSON.stringify(currentUser));
             }
         }
 
         function updateStats() {
-            const count = Object.keys(staticKnowledge).length + Object.keys(updateableKnowledge).length + Object.keys(dailyKnowledge).length;
+            const count = Object.keys(staticKnowledge).length + 
+                         Object.keys(updateableKnowledge).length + 
+                         Object.keys(dailyKnowledge).length +
+                         Object.keys(accumulatedKnowledge).length;
             document.getElementById('knowledgeCount').textContent = count;
         }
 
         // ========== القائمة ==========
         function toggleMenu() {
-            if (window.innerWidth < 1024) { // only toggle on mobile
+            if (window.innerWidth < 1024) {
                 document.getElementById('sideMenu').classList.toggle('show');
             }
             document.getElementById('bgSettings').classList.remove('show');
@@ -1752,7 +1869,7 @@
                 document.getElementById('remindersPanel').classList.remove('hidden');
                 updateRemindersList();
             }
-            if (window.innerWidth < 1024) toggleMenu(); // close menu on mobile after selection
+            if (window.innerWidth < 1024) toggleMenu();
         }
 
         function showBgSettings() {
@@ -1828,7 +1945,8 @@
                 document.querySelector('#teachPanel .update-btn').innerHTML = '🔄 Updateable';
                 document.querySelector('#teachPanel .daily-btn').innerHTML = '📅 Daily';
                 document.querySelector('#teachPanel .query-btn').innerHTML = '📊 Query Daily';
-                document.querySelector('.memory-limit').textContent = '📅 Daily: record attendance with date';
+                document.querySelector('#teachPanel .accumulate-btn').innerHTML = '📈 Accumulate';
+                document.querySelector('.memory-limit').innerHTML = '📅 Daily: record attendance with date<br>📈 Accumulate: Yes (date1) - No (date2)';
                 
                 document.querySelector('#remindersPanel h3').textContent = '⏰ Reminders';
                 document.querySelector('#remindersPanel .teach-btn').textContent = '➕ Add Reminder';
@@ -1863,7 +1981,8 @@
                 document.querySelector('#teachPanel .update-btn').innerHTML = '🔄 قابلة للتحديث';
                 document.querySelector('#teachPanel .daily-btn').innerHTML = '📅 يومية';
                 document.querySelector('#teachPanel .query-btn').innerHTML = '📊 استعلام يوميات';
-                document.querySelector('.memory-limit').textContent = '📅 يومية: تسجل حضور/غياب مع التاريخ';
+                document.querySelector('#teachPanel .accumulate-btn').innerHTML = '📈 تراكم معلومات';
+                document.querySelector('.memory-limit').innerHTML = '📅 يومية: تسجل حضور/غياب مع التاريخ<br>📈 تراكم: نعم (تاريخ1) - لا (تاريخ2)';
                 
                 document.querySelector('#remindersPanel h3').textContent = '⏰ التذكيرات';
                 document.querySelector('#remindersPanel .teach-btn').textContent = '➕ إضافة تذكير';
@@ -1910,6 +2029,7 @@
             staticKnowledge = {};
             updateableKnowledge = {};
             dailyKnowledge = {};
+            accumulatedKnowledge = {};
             reminders = [];
             alert('تم تسجيل الخروج بنجاح');
         }
@@ -1959,12 +2079,11 @@
             }
         }
 
-        // handle window resize for menu visibility
         window.addEventListener('resize', function() {
             if (window.innerWidth >= 1024) {
-                document.getElementById('sideMenu').classList.add('show'); // ensure visible on desktop
+                document.getElementById('sideMenu').classList.add('show');
             } else {
-                document.getElementById('sideMenu').classList.remove('show'); // hide on mobile
+                document.getElementById('sideMenu').classList.remove('show');
             }
         });
     </script>
